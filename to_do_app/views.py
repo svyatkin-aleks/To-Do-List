@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from drf_spectacular.contrib.django_filters import DjangoFilterBackend
+from rest_framework import mixins, status
 from rest_framework.generics import (
-    CreateAPIView, RetrieveAPIView, ListAPIView, DestroyAPIView, UpdateAPIView, GenericAPIView
+    CreateAPIView, RetrieveAPIView, ListAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
 )
+from rest_framework.response import Response
+
 from .serializers import TaskCreateSerializer, TaskListSerializer, \
     TaskCompletedSerializer, TaskRetrievSerializer, TaskUpdateStatusOrderSerializer
 from .models import Task
@@ -46,20 +49,29 @@ class TaskUpdateStatusView(UpdateAPIView):
     http_method_names = ['patch']
 
 
+class CompletedDestroyView(mixins.DestroyModelMixin,
+                     GenericAPIView):
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_queryset()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
-#
-# class TaskCompletedDeleteView(DestroyAPIView):
+class TaskCompletedDeleteView(CompletedDestroyView):
+    queryset = Task.objects.filter(completed=True)
+    serializer_class = TaskCompletedSerializer
+    lookup_field = 'completed'
+    # filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['completed']
+
+
+# class TaskOneView(RetrieveUpdateDestroyAPIView):
 #     queryset = Task.objects.all()
-#     filter_queryset = Task.objects.filter(completed=True)
-#     serializer_class = TaskCompletedSerializer
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_fields = ['completed']
+#     serializer_class = TaskRetrievSerializer
 #
-#
-# def delete_completed(request):
-#     data = Task.objects.get(completed=False)
-#     return delete_completed(data)
 
 
 # Create your views here.

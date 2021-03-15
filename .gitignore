@@ -144,3 +144,4 @@ cython_debug/
 /.idea/misc.xml
 /.idea/blog_project.iml
 /.idea/.gitignore
+/.idea
